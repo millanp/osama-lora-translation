@@ -1,3 +1,19 @@
+"""
+Translation process
+1. Correct the syntax of this file
+2. Line by line, update the function names etc. from MATLAB to Numpy
+- When I encounter a call to another MATLAB function to be translated, move
+  into that file and proceed from step 1
+3. Fix all matrix multiplications
+4. Fix all matrix concatenations
+5. Fix all indices (shaky, will be finalized when I run the files)
+
+Later:
+- Run the Python file and compare output with the MATLAB program.
+- Fix index issues
+- Fix array expansion issues
+"""
+
 # SYNTAX, 
 
 from . import sym_to_data_ang, sym_to_data_upsampled, length, DC_location_correlation, UC_location_corr_DC_based, dnsamp_buff
