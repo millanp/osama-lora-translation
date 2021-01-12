@@ -87,14 +87,14 @@ def dnsamp_buff(Data_stack,Upchirp_ind,num_preamble,num_sync,num_DC,N,DC):
                 row_ind = np.concatenate([range(N-5,N+1), range(1,6+1)], 1)
                 count = 1
                 for i in np.nditer(row_ind):
-                    temp[count] = sum(abs(Spec[i,:]))
+                    temp[count] = np.sum(np.abs(Spec[i,:]))
                     count = count + 1
                 [_,ind] = temp.max(0)
                 pream_peak_ind = row_ind(ind)
                 adj_ind = np.concatenate([np.mod(pream_peak_ind-1,N), np.mod(pream_peak_ind+1,N)], 1)
                 if(sum(adj_ind == 0) == 1):
                     adj_ind[(adj_ind == 0).nonzero()] = N
-                freq_track_qual = ( sum(abs(Spec[pream_peak_ind,:])) - sum(abs(Spec[adj_ind(1),:])) ) + ( sum(abs(Spec[pream_peak_ind,:])) - sum(abs(Spec[adj_ind(2),:])) )
+                freq_track_qual = ( np.sum(np.abs(Spec[pream_peak_ind,:])) - np.sum(np.abs(Spec[adj_ind(1),:])) ) + ( np.sum(np.abs(Spec[pream_peak_ind,:])) - np.sum(np.abs(Spec[adj_ind(2),:])) )
     #             keyboard
                 inn = np.concatenate([inn, freq_track_qual], 1)
 
