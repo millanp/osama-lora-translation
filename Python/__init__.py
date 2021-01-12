@@ -6,6 +6,8 @@ from .DC_location_correlation import DC_location_correlation
 from .UC_location_corr_DC_based import UC_location_corr_DC_based
 from .stft import stft
 from .dnsamp_buff import dnsamp_buff
+from .Chirplet_Transform import Chirplet_Transform
+from .get_bounded_max import get_bounded_max
 
 def length(arr):
     return arr.shape[1]
