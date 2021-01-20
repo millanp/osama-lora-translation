@@ -6,6 +6,7 @@ fLevel = N;
 WinLen = N;
 alpha = 0;
 
+unused_ = Upchirp_ind(:,1);
 pot_DC_loc = Upchirp_ind(:,1) + ( (num_preamble + num_sync) * N );
 Preamble_ind = [];
 bin_offsets = [];

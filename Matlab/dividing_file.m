@@ -1,16 +1,10 @@
-close all;
-% clear all;
-clc
-clearvars - except cursor_info cursor_info1
-
 num_nodes = 15;
 num_data_sym = 28;
-path = 'C:\Osama\Matlab_lt\indoor_15nodes_30dBspd_out';
+path = '/home/millan/wsp/osama/Matlab';
 %%
 for k = [0.5]
     for iter = 1
         %%
-        clearvars - except k iter num_nodes path num_data_sym
         % chirp variables
         SF = 8;
         N = 2 ^ SF;
@@ -20,7 +14,7 @@ for k = [0.5]
         Ts = 1 / Fs;
      
         % SNR = 10;
-     
+   
         % Chirplet Transform variables
         sigma = 0.5; %0.94;%0.31623;%0.288675;
         fLevel = N;
@@ -46,6 +40,9 @@ for k = [0.5]
         DC_pre = conj(sym_to_data_ang(preamble_sym .* ones(1, num_preamble), N));
         DC_pre_upsamp = conj(sym_to_data_upsampled(preamble_sym .* ones(1, num_preamble), N, Fs, BW));
         sync = sym_to_data_ang([9 17], N);
+        size(sym_to_data_ang(ones(1, num_preamble), N))
+        size(sync)
+        size(conj(UC_SFD))
         start_frame = [sym_to_data_ang(ones(1, num_preamble), N) sync conj(UC_SFD)];
      
         fi_1 = fopen('15tx_0.5lm_1');
@@ -82,19 +79,20 @@ for k = [0.5]
         demod_sym_stack = [];
         Peaks = [];
         %%
-        for m = 1:size(idx, 1)
+        for m = 8:25%size(idx, 1)
+            disp(['PROG m ', num2str(m), '/', num2str(size(idx, 1))]);
             %%      DC correlations
             tic
             temp_buff = [];
             temp_buff = x_1(idx(m, 1) : idx(m, 2));
+            disp('ENTERING CORRELATION')
             ind = DC_location_correlation(temp_buff(1:upsampling_factor:end), N, DC(1:N), 16, 0.2);
-         
             if (size(ind, 1) == 0)
                 continue;
             end
             temp = [];
             indices = [zeros(1, floor(num_DC)); ind];
-         
+            size(indices, 1)
             for i = 2:size(indices, 1)
                 %     if(abs(indices(i) - indices(i-1)) > 3 )
                 %         temp = [temp; indices(i,:)];
@@ -102,16 +100,20 @@ for k = [0.5]
                 if (isempty(temp))
                     temp = [temp; indices(i, :)];
                 else
+                    unused_indi = indices(i);
+                    unused_temp1 = temp(:, 1);
                     if (min(abs(indices(i) - temp(:, 1))) > 3)
                         temp = [temp; indices(i, :)];
                     end
                 end
             end
-            DC_ind = temp
+            DC_ind = temp;
          
             Rx_Buffer = [];
             DC_ind_true = (DC_ind * upsampling_factor) + idx(m, 1);
             for i = 1:size(DC_ind, 1)
+                unused_inda = DC_ind_true(i, 1) - (num_preamble + num_sync + 1.5) * upsampling_factor * N;
+                unused_indb = DC_ind_true(i, 1) + (num_DC + num_data_sym + 3) * upsampling_factor * N;
                 Rx_Buffer(i, :) = x_1(DC_ind_true(i, 1) - (num_preamble + num_sync + 1.5) * upsampling_factor * N : DC_ind_true(i, 1) + (num_DC + num_data_sym + 3) * upsampling_factor * N);
             end
             DC_idx = (num_preamble + num_sync + 1.5) * N;
@@ -119,6 +121,7 @@ for k = [0.5]
          
             %%
             for o = 1:size(Rx_Buffer, 1)
+                disp(['PROG o ', num2str(o), '/', num2str(size(Rx_Buffer, 1))]);
                 %%      UC correlations
              
                 Data_freq_off = [];
@@ -149,6 +152,7 @@ for k = [0.5]
                 peaks = [zeros(1, size(Peak_amp, 2)); Peak_amp];
                 clear Peak_amp
                 for i = 2:size(indices, 1)
+                    disp('looping');
                     %     if(abs(indices(i) - indices(i-1)) <= 3 )
                     %
                     %     else
@@ -157,10 +161,12 @@ for k = [0.5]
                     %     end
                  
                     if (length(temp) == 0)
+                        disp('first if');
                         temp = [temp; indices(i, :)];
                         temp_data = [temp_data; Data(i, :)];
                         temp_peaks = [temp_peaks; peaks(i, :)];
                     else
+                        disp('second if');
                         if (min(abs(indices(i) - temp(:, 1))) > 10)
                             temp = [temp; indices(i, :)];
                             temp_data = [temp_data; Data(i, :)];
@@ -189,13 +195,13 @@ for k = [0.5]
             end
          
         end
-     
+        disp('writing');
         % filename1 = ['C:\Osama\Matlab_lt\25%Peak\' num2str(k) 'tx_lamda' num2str(iter)];
         % filename2 = ['C:\Osama\Matlab_lt\25%Peak\' num2str(k) 'tx_lamda' num2str(iter) '_Peaks'];
-        filename1 = [path '\lamda_' num2str(floor(k * num_nodes)) '_' num2str(iter)];
-        filename2 = [path '\lamda_' num2str(floor(k * num_nodes)) '_' num2str(iter) '_Peaks'];
-        save(filename1, 'demod_sym_stack');
-        save(filename2, 'Peaks');
+        % filename1 = [path '\lamda_' num2str(floor(k * num_nodes)) '_' num2str(iter)];
+        % filename2 = [path '\lamda_' num2str(floor(k * num_nodes)) '_' num2str(iter) '_Peaks'];
+        save('thing1.txt', 'demod_sym_stack');
+        save('thing2.txt', 'Peaks');
     end
  
 end

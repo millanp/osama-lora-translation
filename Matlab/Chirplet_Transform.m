@@ -73,9 +73,8 @@ for iLoop = 1:SigLen
     Index = iIndex + Lf +1;     % Subscript index of the frequency axis (row number) in the Spec two-dimensional array
     R_Operator = exp(-1i * 2*pi*alpha * t(iIndex1).^2 / 2); % Frequency rotation operator (Shear Frequency)
     S_Operator = exp(1i * 2*pi*alpha * t(iLoop) * t(iIndex1)); % Frequency shift operator (Shift Frequency)
-    
+    use_1 = Sig(iIndex1);
     Sig_Section = Sig(iIndex1).*R_Operator.*S_Operator; % Signal segment after frequency rotation and frequency shift
-    
     Spec(Index, iLoop) = Sig_Section.* conj(WinFun(iIndex2));  % fill the two-dimensional array 
 end
 %% STFT

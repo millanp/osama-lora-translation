@@ -1,6 +1,6 @@
-# SYNTAX, FUNCTIONS, MULT, CONCAT, INDICES (???)
+# SYNTAX, FUNCTIONS, MULT, CONCAT, INDICES, WORKING!!!
 import numpy as np
-from . import length
+from util import length
 import math
 
 # def Chirplet_Transform(Sig,fLevel=512,WinLen=64,SampFreq=1000,alpha,sigma):\
@@ -38,9 +38,10 @@ def Chirplet_Transform(Sig,fLevel,WinLen,SampFreq,alpha,sigma):
     ## Generate Gauss window functions
     WinLen = math.ceil(WinLen/2) * 2+1    # Round the window length value WinLen to the +¡Þ direction to the nearest odd number
     # WinFun = exp(-(1/(2*sigma))* linspace(-1,1,WinLen).^2);    # Gauss window function, fixed time width [-1, 1], divided into WinLen modulation data points
-    WinFun = math.exp(-(1/(2*(sigma^2)))* np.linspace(-1,1,WinLen) ** 2)
+    WinFun = np.exp(-(1/(2*(sigma**2))) * (np.linspace(-1,1,WinLen) ** 2))
     # WinFun = tftb_window(WinLen,'Gauss',0.6755).';#exp(-(1/2)*(1/sigma)^2* linspace(-1,1,WinLen).^2);
     WinFun = WinFun / (math.sqrt(2*math.pi)*sigma)
+    # WinFun OKAY
     # WinFun = WinFun./sqrt(sum(WinFun.^2));
 
     # figure
@@ -54,25 +55,27 @@ def Chirplet_Transform(Sig,fLevel,WinLen,SampFreq,alpha,sigma):
 
     Lw = (WinLen - 1)/2    # Half window data points
     ## CT spectrum result array (initialized to 0)
-    Spec = np.zeros((fLevel,SigLen)) 
+    Spec = np.zeros((fLevel,SigLen), dtype=np.complex64) 
     ## Sliding window signal,data segmentation preparation
     for iLoop in range(SigLen):
         # Determine the upper and lower limits of the left and right signal index subscripts (note that to prevent the edge width from exceeding the time domain, the retrieval error!)
-        iLeft = min([iLoop-1, Lw, Lf])
-        iRight = min([SigLen-iLoop, Lw, Lf])
+        iLeft = min([iLoop, Lw, Lf])
+        iRight = min([SigLen-iLoop - 1, Lw, Lf])
         iIndex = np.arange(-iLeft, iRight+1)
-        
-        iIndex1 = iIndex + iLoop   # subscript index of the original signal
-        iIndex2 = iIndex + Lw + 1  # subscript index of window function vector
-        Index = iIndex + Lf +1     # Subscript index of the frequency axis (row number) in the Spec two-dimensional array
-        R_Operator = math.exp(-1j * 2*math.pi*alpha * t[iIndex1] ** 2 / 2) # Frequency rotation operator (Shear Frequency)
-        S_Operator = math.exp(1j * 2*math.pi*alpha * t[iLoop] * t[iIndex1]) # Frequency shift operator (Shift Frequency)
-        
+        # iIndex OKAY
+
+        iIndex1 = (iIndex + iLoop).astype('int')   # subscript index of the original signal
+        iIndex2 = (iIndex + Lw).astype('int')  # subscript index of window function vector
+        Index = (iIndex + Lf).astype('int')     # Subscript index of the frequency axis (row number) in the Spec two-dimensional array
+        # indices OKAY on first round...
+        # print('calcd: ', -1j * 2*math.pi*alpha * (t[iIndex1] ** 2) / 2)
+        R_Operator = np.exp(-1j * 2*math.pi*alpha * (t[iIndex1] ** 2) / 2) # Frequency rotation operator (Shear Frequency)
+        S_Operator = np.exp(1j * 2*math.pi*alpha * t[iLoop] * t[iIndex1]) # Frequency shift operator (Shift Frequency)
         Sig_Section = Sig[iIndex1] * R_Operator * S_Operator # Signal segment after frequency rotation and frequency shift
-        
-        Spec[Index, iLoop] = Sig_Section * np.conj(WinFun[iIndex2])  # fill the two-dimensional array 
-    ## STFT
-    Spec = np.fft.fft(Spec) # STFT
+        # SIG SEC OKAY
+        Spec[Index, iLoop] = Sig_Section * np.conj(WinFun[iIndex2])  # fill the two-dimensional array
+    ## STFT BEFORE FFT OKAY!!
+    Spec = np.fft.fft(Spec.T).T # STFT
     Spec = Spec*2/fLevel # restores the true magnitude of FT
     # Spec = Spec(1:(end-1)/2,:); # till the Nyquist frequency
 

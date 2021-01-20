@@ -8,11 +8,22 @@ from .stft import stft
 from .dnsamp_buff import dnsamp_buff
 from .Chirplet_Transform import Chirplet_Transform
 from .get_bounded_max import get_bounded_max
+from .filter_false_postives import filter_false_postives
+from .Demod import Demod
 
 def length(arr):
-    return arr.shape[1]
+    return max(arr.shape)
 
 def pol2cart(rho, phi):
     x = rho * math.cos(math.radians(phi))
     y = rho * math.sin(math.radians(phi))
     return(x, y)
+
+import operator as op
+from functools import reduce
+
+def nchoosek(n, r):
+    r = min(r, n-r)
+    numer = reduce(op.mul, range(n, n-r, -1), 1)
+    denom = reduce(op.mul, range(1, r+1), 1)
+    return numer // denom

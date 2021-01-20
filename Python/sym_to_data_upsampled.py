@@ -2,7 +2,7 @@
 
 import math
 import numpy as np
-from . import pol2cart
+from util import pol2cart
 
 def sym_to_data_upsampled(symbols,N,Fs,BW):
 #SYM_TO_DATA Summary of this function goes here
@@ -20,14 +20,14 @@ def sym_to_data_upsampled(symbols,N,Fs,BW):
 #         phase = 0;
         temp = []
         c = 1
-        for i in range(N*(Fs/BW)):
+        for i in range(N*(int(Fs)//int(BW))): # NOTE switched to int divide
             phase = phase + ((2*math.pi*F[i])/Fs)
             polar_radius = 1
 
             [x, y] = pol2cart(phase, polar_radius)
 
-            temp[c] = complex(x, y)
+            temp.append(complex(x, y))
             c = c+1
-        data = np.concatenate([data, temp], 1)
-    return data
+        data += temp
+    return np.array(data)
 
