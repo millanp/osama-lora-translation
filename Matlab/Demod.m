@@ -1,249 +1,246 @@
-function [symbols, sym_peak] = Demod(Pream_ind,Rx_Buffer,BW,SF,Fs,N,num_preamble,num_sync,num_DC,num_data_sym,DC,Pream_frame,Peak_amp,sym,mean_peak_std)
+function [symbols, sym_peak] = Demod(Pream_ind,Rx_Buffer,BW,SF,Fs,N,num_preamble,num_sync,num_DC,num_data_sym,DC,Pream_frame,Peak_amp,sym,mean_peak_std,m)
 %DEMOD Summary of this function goes here
 %   Detailed explanation goes here
 % Chirplet Transform variables
 % sigma = 0.05;%0.94;%0.94;%0.94;%0.31623;%0.288675;
 % 7*(Peak_amp(3))
 dis = 0;
-edge_range_threshold = 4;
-fLevel = N;
-WinLen = N;
-alpha = 0;%(BW^2)/(2^SF);%128e6; % in Hz/s�
+wind_min = 35;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Pream_frame = Pream_frame + 1;
+% Pream_frame = Pream_frame;
 Pream_frame(:,num_preamble + 1) = Pream_frame(:,num_preamble) + N;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Data_frame_start = Pream_ind(1) + (num_preamble*N) + (num_DC*N) + (num_sync*N);
-Data_frame_end = Data_frame_start + (num_data_sym*N);
-% Data_frames = Data_frame_start:N:Data_frame_end;
-frame_indices = [((Data_frame_start: N :Data_frame_start+((num_data_sym-1)*N)))' ((Data_frame_start+N-1 : N :Data_frame_start+((num_data_sym)*N)))'];
+for i = 1:size(Pream_frame,1)
+    frm_st = Pream_frame(i,1) + (num_preamble*N) + (num_DC*N) + (num_sync*N);
+    frm_en = frm_st + (num_data_sym*N);
+    frm_ind(i,:,:) = [((frm_st: N :frm_st+((num_data_sym-1)*N)))' ((frm_st+N-1 : N :frm_st+((num_data_sym)*N)))'];
+end
 
 
 data_ind = [];
 en_arr = [];
 sym_peak = [];
-for  k = 1:num_data_sym
-%     if( sum(k == [ 6 ]))
-%         keyboard
-%     end
-    close all
-    %%%%%%%%%%%%%%
-
-    data_wind = Rx_Buffer(frame_indices(k,1):frame_indices(k,2)) .* DC;
-    data_wind_next_1 = Rx_Buffer(frame_indices(k,1) + N:frame_indices(k,2) + N) .* DC;
-    data_wind_prev_1 = Rx_Buffer(frame_indices(k,1) - N:frame_indices(k,2) - N) .* DC;
+    Data_frame_start = Pream_ind(1) + (num_preamble*N) + (num_DC*N) + (num_sync*N);
+    Data_frame_end = Data_frame_start + (num_data_sym*N);
+    % Data_frames = Data_frame_start:N:Data_frame_end;
+    frame_indices = [((Data_frame_start: N :Data_frame_start+((num_data_sym-1)*N)))' ((Data_frame_start+N-1 : N :Data_frame_start+((num_data_sym)*N)))'];
     
-    data_wind_next_2 = Rx_Buffer(frame_indices(k,1) + 2*N:frame_indices(k,2) + 2*N) .* DC;
-    data_wind_prev_2 = Rx_Buffer(frame_indices(k,1) - 2*N:frame_indices(k,2) - 2*N) .* DC;
-    temp_d = abs(fft(data_wind,N));
-    temp_next_1 = abs(fft(data_wind_next_1,N));
-    temp_prev_1 = abs(fft(data_wind_prev_1,N));
-    
-    temp_next_2 = abs(fft(data_wind_next_2,N));
-    temp_prev_2 = abs(fft(data_wind_prev_2,N));
-    
-    
-%     up_thresh = (Peak_amp(1) + 4);
-%     low_thresh = (Peak_amp(1) - 4);
-    up_thresh = (Peak_amp(1) + 0.25*Peak_amp(1));
-    low_thresh = (Peak_amp(1) - 0.25*Peak_amp(1));
-%     up_thresh = (Peak_amp(1) + mean_peak_std);
-%     low_thresh = (Peak_amp(1) - mean_peak_std);
-%     up_thresh = (Peak_amp(1) + 12*(Peak_amp(3)));
-%     low_thresh = (Peak_amp(1) - 12*(Peak_amp(3)));
-    if(low_thresh < (4*sum(temp_d)/N)) %1
-        low_thresh = (4*sum(temp_d)/N);
-    end
-    
-%     plot(temp_d)
-%     hold on
-%     plot((4*sum(temp_d)/N).*ones(1,N))
-%     hold on 
-%     plot(up_thresh.*ones(1,N))
-%     plot(low_thresh.*ones(1,N))
-%     set(gca,'linewidth',1.5,'fontsize',25,'fontname','Times New Roman');
-%     title('FFT of Data Window','FontSize',30);
-%     xlabel('Freq-bin','FontSize',30);
-%     ylabel('Amp.','FontSize',30);
-%     keyboard
-
-%     pot_sym = get_4_max(temp_d,max(temp_d)/3,8);
-    pot_sym = get_bounded_max(temp_d,up_thresh,low_thresh);
-    if(length(pot_sym) == 0)
-%         keyboard
-    end
-%     next_wind_sym_1 = get_4_max(temp_next_1,max(temp_next_1)/3,8);%get_bounded_max(temp_next_1,up_thresh,low_thresh);%
-%     next_wind_sym_2 = get_4_max(temp_next_2,max(temp_next_2)/3,8);%get_bounded_max(temp_next_2,up_thresh,low_thresh);%
-%     prev_wind_sym_1 = get_4_max(temp_prev_1,max(temp_prev_1)/3,8);%get_bounded_max(temp_prev_1,up_thresh,low_thresh);%
-%     prev_wind_sym_2 = get_4_max(temp_prev_2,max(temp_prev_2)/3,8);%get_bounded_max(temp_prev_2,up_thresh,low_thresh);%
-%     
-    next_wind_sym_1 = get_bounded_max(temp_next_1,up_thresh,low_thresh);%get_4_max(temp_next_1,max(temp_next_1)/3,8);%
-    next_wind_sym_2 = get_bounded_max(temp_next_2,up_thresh,low_thresh);%get_4_max(temp_next_2,max(temp_next_2)/3,8);%
-    prev_wind_sym_1 = get_bounded_max(temp_prev_1,up_thresh,low_thresh);%get_4_max(temp_prev_1,max(temp_prev_1)/3,8);%
-    prev_wind_sym_2 = get_bounded_max(temp_prev_2,up_thresh,low_thresh);%get_4_max(temp_prev_2,max(temp_prev_2)/3,8);%
-    
-    temp = [];
-    for i = 1:length(pot_sym)
-        if( (sum(pot_sym(i) == prev_wind_sym_1) && sum(pot_sym(i) == next_wind_sym_1))...
-                || (sum(pot_sym(i) == prev_wind_sym_2) && sum(pot_sym(i) == prev_wind_sym_1))...
-                || (sum(pot_sym(i) == next_wind_sym_1) && sum(pot_sym(i) == next_wind_sym_2)) )
-%             
-%         if( (sum(pot_sym(i) == prev_wind_sym_1) || sum(pot_sym(i) == next_wind_sym_1)) )
-            
-        else
-            temp = [temp pot_sym(i)];
-        end
-    end
-    pot_sym = temp;
-%     pot_sym = round(pot_sym/2);
-
-    if(length(pot_sym) >= 2)
-        r = nchoosek(pot_sym,2);
-        freq_diff = abs(r(:,1) - r(:,2));
-        freq_diff(find(freq_diff == 1)) = N;
-        freq_diff(find(freq_diff == 2)) = N;
-        freq_diff;
-        min_freq_dif = min(freq_diff);
-        sig_f = min_freq_dif / N;
-        sig = ((0.05*0.05)/sig_f) + 0.04;
-%         if(min(freq_diff) > 20)
-%             sig = 0.1;
-%         else
-%             sig = 0.2;%0.08;
+    for  k = 1:num_data_sym
+        close all;
+%         if( sum(k == [ 25 ]))
+%             keyboard
 %         end
-    else
-        sig = 0.1;
-    end
-    
-    % Fractional offset
-    
-    temp = [];
-    for i = 1:length(pot_sym)
-        if(sum(pot_sym(i) + 1 == pot_sym) || sum(pot_sym(i) - 1 == pot_sym))
-        else
-            temp = [temp pot_sym(i)];
+        %%%%%%%%%%%%%%
+        %% Find interfering Symbol Boundaries
+        ind = [];
+        sym_bnd = [];
+        for i = 1:size(frm_ind,1)
+            if(i == m)
+                continue;
+            end
+%             ind = [ind; reshape(frm_ind(i,intersect(find(frm_ind(i,:,1) > frame_indices(k,1)), find(frm_ind(i,:,1) < frame_indices(k,2))),:),1,[])];
+            st = reshape(frm_ind(i,:,1),[],1);
+            ed = reshape(frm_ind(i,:,2),[],1);
+            sym_bnd = [sym_bnd st(intersect(find(st > frame_indices(k,1)) , find(st < frame_indices(k,2))))];
+            sym_bnd = [sym_bnd ed(intersect(find(ed > frame_indices(k,1)) , find(ed < frame_indices(k,2))))];
         end
-    end
-    pot_sym = temp;
-
-
-    %%%%%%%%%%%%%
-    if(dis)
-        figure;plot(temp);hold on;plot(max(temp)/2.*ones(1,N))
-    end
-    c = 1;
-    wind = [];
-    out = [];
-    for sigma = [2 sig]
-%         close all
-        [temp,~,~] = Chirplet_Transform(data_wind,fLevel,WinLen,Fs,alpha,sigma);
-         wind(c,:,:) = abs(temp);
-%         wind(c,:,:) = (abs(temp).^2)./max(max(abs(temp).^2));
-%         wind_edge(c,:,:) = edge(abs(temp));
-        if(dis)
-            spec_plot(abs(temp),N,0,1,0,0)
-        end
-%         spec_plot(temp,N,0)
-        c = c + 1;
-    end
-%     spec_plot(reshape(wind(1,:,:),N+1,[]),N,0,1,0,0)
-if(dis == 1)
-    for i = 1:size(wind,2)
-        for j = 1:size(wind,3)
-            absSpec = abs(wind(:,i,j));
-            index = find(min(absSpec) == absSpec);
-            out_temp(i,j) = wind(index(1),i,j);
-        end
-    end
-    spec_plot(out_temp,N,0,1,0,0)
-end
-
-    
-%     temp = [];
-%     for i = 1:length(pot_sym)
-%         if(sum(pot_sym(i) == discard_freqs) == 0)
-%             temp = [temp pot_sym(i)];
+        
+        %% CIC Filtering
+        data_wind = Rx_Buffer(frame_indices(k,1):frame_indices(k,2)) .* DC;
+        data_fft = abs(fft(data_wind));
+        
+        sigma = 1;
+        WinFun = exp(-(1/(2*(sigma^2)))* linspace(-1,1,N).^2);
+        WinFun = WinFun./(sqrt(2*pi)*sigma);
+        temp_wind = data_wind .* WinFun;
+        
+        sym_bnd = mod(sym_bnd - frame_indices(k,1),N);
+%         if(sum(sym_bnd < 40) ~= 0)
+%             sym_bnd(find(sym_bnd < 40)) = 40;
+%             if(sum(sym_bnd > 216) ~= 0)
+%                 sym_bnd(find(sym_bnd > 216)) = 216;
+%             end
 %         end
-%     end
-%     pot_sym = temp;
+        intf_wind = [];
+        nfft = 4;
+        for i = 1:length(sym_bnd)
+            buff = zeros(2,nfft*N);
+            buff(1,1:sym_bnd(i) - 1) = temp_wind(1:sym_bnd(i) - 1);
+            buff(1,:) = abs(fft(buff(1,:),nfft*N))./sqrt(sum(abs(buff(1,:)).^2));
+            buff(2,sym_bnd(i):N) = temp_wind(sym_bnd(i):N);
+            buff(2,:) = abs(fft(buff(2,:),nfft*N))./sqrt(sum(abs(buff(2,:)).^2));
+            intf_wind = [intf_wind; buff];
+        end
+        intf_wind_min_fft = min(intf_wind,[],1);
+        pot_sym_cic = get_4_max(intf_wind_min_fft,4*sum(intf_wind_min_fft)/(nfft*N),nfft*N);
+        pot_sym_cic = ceil(pot_sym_cic/nfft);
+        %% Power-Filtering
+        PwrFctr = 0.5;
+        PwrFlr = 4;
+        up_thresh = (Peak_amp(1) + PwrFctr*Peak_amp(1));
+        low_thresh = (Peak_amp(1) - PwrFctr*Peak_amp(1));
+        if(low_thresh < (PwrFlr*sum(data_fft)/N)) %1
+            low_thresh = (PwrFlr*sum(data_fft)/N);
+        end
+        pot_sym_pf = get_bounded_max(data_fft,up_thresh,low_thresh);
+        %% Filtering Preamble of interfering Packets
+        data_wind_next_1 = Rx_Buffer(frame_indices(k,1) + N:frame_indices(k,2) + N) .* DC;
+        data_wind_prev_1 = Rx_Buffer(frame_indices(k,1) - N:frame_indices(k,2) - N) .* DC;
+        data_wind_next_2 = Rx_Buffer(frame_indices(k,1) + 2*N:frame_indices(k,2) + 2*N) .* DC;
+        data_wind_prev_2 = Rx_Buffer(frame_indices(k,1) - 2*N:frame_indices(k,2) - 2*N) .* DC;
+        temp_next_1 = abs(fft(data_wind_next_1,N));
+        temp_prev_1 = abs(fft(data_wind_prev_1,N));
+        temp_next_2 = abs(fft(data_wind_next_2,N));
+        temp_prev_2 = abs(fft(data_wind_prev_2,N));        
+        next_wind_sym_1 = get_bounded_max(temp_next_1,up_thresh,low_thresh);%get_4_max(temp_next_1,max(temp_next_1)/3,8);%
+        next_wind_sym_2 = get_bounded_max(temp_next_2,up_thresh,low_thresh);%get_4_max(temp_next_2,max(temp_next_2)/3,8);%
+        prev_wind_sym_1 = get_bounded_max(temp_prev_1,up_thresh,low_thresh);%get_4_max(temp_prev_1,max(temp_prev_1)/3,8);%
+        prev_wind_sym_2 = get_bounded_max(temp_prev_2,up_thresh,low_thresh);%get_4_max(temp_prev_2,max(temp_prev_2)/3,8);%
 
-    if(length(pot_sym) == 0)
-        disp('empty')
-        data_ind = [data_ind 0];
-%         sym_peak(k) = temp_d(sym(k));
-        continue;
-    end
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    d = [];
-    for i = 1:length(pot_sym)
-        if(pot_sym(i) > N/2)
-            d(i) = pot_sym(i) + 1;
+        temp = [];
+        for i = 1:length(pot_sym_pf)
+            if( (sum(pot_sym_pf(i) == prev_wind_sym_1) && sum(pot_sym_pf(i) == next_wind_sym_1))...
+                    || (sum(pot_sym_pf(i) == prev_wind_sym_2) && sum(pot_sym_pf(i) == prev_wind_sym_1))...
+                    || (sum(pot_sym_pf(i) == next_wind_sym_1) && sum(pot_sym_pf(i) == next_wind_sym_2)) )
+    %             
+    %         if( (sum(pot_sym(i) == prev_wind_sym_1) || sum(pot_sym(i) == next_wind_sym_1)) )
+
+            else
+                temp = [temp pot_sym_pf(i)];
+            end
+        end
+        pot_sym_pf = temp;
+
+        %%  Freq. Offset Filtering
+%         temp = [];
+%         for i = 1:length(pot_sym_pf)
+%             if(sum(pot_sym_pf(i) + 1 == pot_sym_pf) || sum(pot_sym_pf(i) - 1 == pot_sym_pf))
+%             else
+%                 temp = [temp pot_sym_pf(i)];
+%             end
+%         end
+%         pot_sym = temp;
+        %%  Choir Module
+        npnt = 16;
+        data_fft_npnt = abs(fft(data_wind,npnt*N));
+        FO_thresh = 0.25;
+        sym_FO = [];
+        temp = [];
+        for i = 1:length(pot_sym_pf)
+            ind = [];
+            if(pot_sym_pf(i) == 1)
+                ind = [(N*npnt) - (npnt/2) + 1 : (N*npnt) (((pot_sym_pf(i)-1) * npnt) + 1) + (npnt/2) : N*npnt];
+            else
+                ind = (((pot_sym_pf(i)-1) * npnt) + 1) - (npnt/2) : (((pot_sym_pf(i)-1) * npnt) + 1) + (npnt/2);
+            end
+            [~,a] = max(data_fft_npnt(ind));
+            sym_FO = [sym_FO abs(a - ((npnt/2)+1))/npnt];
+            if(sym_FO(end) < FO_thresh)
+                temp = [temp pot_sym_pf(i)];
+            end
+        end
+%         sym(k)
+%         pot_sym_pf - 2
+%         sym_FO
+        pot_sym = temp;
+        
+        
+        %%
+        b = [];
+        if(length(sym_bnd) == 0)
+            if(length(pot_sym) == 0)
+                [~,symbols(k)] = max(data_fft);
+            else
+                dist = abs(data_fft(pot_sym) - (up_thresh + low_thresh)/2);
+                [~,b] = min(dist);
+                symbols(k) = pot_sym(b);
+            end
         else
-            d(i) = pot_sym(i);
-        end
-    end
-    
-
-    
-%     freq_amp = sum(abs(out(d,1:7)),2)/7;
-%     freq_amp_end = sum(abs(out(d,end-6:end)),2)/7;
-
-    for i = 1:length(d)
-        for j = 1:size(wind,3)
-            absSpec = abs(wind(:,d(i),j));
-            index = find(min(absSpec) == absSpec);
-            out(i,j) = wind(index(1),d(i),j);
-        end
-    end
-    a = [];
-    f = [];
-    for i = 1:size(out,1)
-        a(i,:) = diff(out(i,:));
-        f(i) = (length(find(a(i,1:N/2) > 0))*100/N) + (length(find(a(i,N/2+1:end) < 0))*100/N);
-    end
-%     end
-%     freq_amp = abs(out(:,1));
-%     freq_amp_end = abs(out(:,end));
+            fin_sym = intersect(pot_sym_cic,pot_sym);
+            %%  Final Decision
+            if(length(fin_sym) == 0)
+                if(length(pot_sym_cic) == 0 && length(pot_sym) ~= 0)
+                    dist = abs(data_fft(pot_sym) - (up_thresh + low_thresh)/2);
+                    [~,b] = min(dist);
+                    symbols(k) = pot_sym(b);
+                elseif(length(pot_sym) == 0 && length(pot_sym_cic) ~= 0)
+%                     [~,b] = max(intf_wind_min_fft(nfft.*pot_sym_cic));
+%                     symbols(k) = pot_sym_cic(b);
+                    sdev = std(intf_wind(:,nfft.*pot_sym_cic),1);
+                    [~,b] = min(sdev);
+                    symbols(k) = pot_sym_cic(b);
+                elseif(length(pot_sym) == 0 && length(pot_sym_cic) == 0)
+                    [~,symbols(k)] = max(data_fft);
+                else
+                    dist = abs(data_fft(pot_sym) - (up_thresh + low_thresh)/2);
+                    [~,b] = min(dist);
+                    symbols(k) = pot_sym(b);
+                end
+            else
+                %% Max Peak Decision
+%                 [~,b] = max(intf_wind_min_fft(fin_sym));
+%                 symbols(k) = fin_sym(b);
+                %%  Standard Deviation Decision
+%                 sdev = std(intf_wind(:,nfft.*fin_sym),1);
+%                 [~,b] = min(sdev);
+%                 symbols(k) = fin_sym(b);
+                %% Dynamic Sigma
+%                 avg_pnts = 13;
+%                 WinFun1 = exp(-(1/(2*(sig^2)))* linspace(-1,1,N).^2);
+%                 WinFun1 = WinFun1./(sqrt(2*pi)*sig);
+%                 G_wind1 = data_wind .* WinFun1;
+%                 
+%                 WinFun2 = exp(-(1/(2*(2^2)))* linspace(-1,1,N).^2);
+%                 WinFun2 = WinFun2./(sqrt(2*pi)*2);
+%                 G_wind2 = data_wind .* WinFun2;
+%                 for i = 0:avg_pnts
+%                     Spec_l(1:N/2 + i,i+1) = G_wind1(1:N/2 + i);
+%                     Spec_l(N/2 - (avg_pnts - i):N,i+1 + (avg_pnts + 1)) = G_wind1(N/2 - (avg_pnts - i):N);
+%                     
+%                     Spec_u(1:N/2 + i,i+1) = G_wind2(1:N/2 + i);
+%                     Spec_u(N/2 - (avg_pnts - i):N,i+1 + (avg_pnts + 1)) = G_wind2(N/2 - (avg_pnts - i):N);
+%                 end
+%                 Sp(1,:,:) = fft(Spec_l);
+%                 Sp(2,:,:) = fft(Spec_u);
+%                 Spec = reshape(min(Sp,[],1),256,[]);
+% %                 spec_plot(abs(Spec),N,0,0,0,0);
 % 
-%     freq_amp = sum(abs(out(:,1:7)),2)/7;
-%     freq_amp_end = sum(abs(out(:,end-6:end)),2)/7;
+%                 freq_amp = sum(abs(Spec(fin_sym,1:(avg_pnts + 1))),2)/(avg_pnts + 1);
+%                 freq_amp_end = sum(abs(Spec(fin_sym,end-avg_pnts:end)),2)/(avg_pnts + 1);
+% 
+%                 dif = abs(freq_amp - freq_amp_end);
+%                 [~,b] = min(dif);
+%                 symbols(k) = fin_sym(b);
+                %%  Stft
+                avg_pnts = 10;
+                G_wind1 = data_wind;% .* WinFun1;
+                Spec = [];
+                for i = 0:avg_pnts
+                    Spec(1:N/2 + i,i+1) = G_wind1(1:N/2 + i);
+                    Spec(N/2 - (avg_pnts - i):N,i+1 + (avg_pnts + 1)) = G_wind1(N/2 - (avg_pnts - i):N);
+                end
+                Spec = fft(Spec);
+%                 spec_plot(abs(Spec),N,0,0,0,0);
 
-    freq_amp = sum(abs(out(:,1:14)),2)/14;
-    freq_amp_end = sum(abs(out(:,end-13:end)),2)/14;
-    
-    dif = abs(freq_amp - freq_amp_end);
-    [~,b] = min(dif);
-%     [~,b] = max(f);
-    data_ind = [data_ind pot_sym(b)];
-    %sym_peak(k) = temp_d(sym(k));
-%     if(k == 18)
-%         keyboard
-%     end
-    
-%     [~,s] = max(temp_d);
-%     data_ind = [data_ind s];
-    
-%     en_arr = [en_arr 0 en];
-%     s(k) = length(ind);
-%     figure;plot([abs(diag(wind,2 - data_ind(2) - 1)).^2; abs(diag(wind,128 + (2 - data_ind(2)) -1)).^2])
-    if(dis)
-        figure
-        plot(abs(out(:,1)))
-        hold on
-        plot(abs(out(:,end)))
-        set(gca,'linewidth',1.5,'fontsize',25,'fontname','Times New Roman');
-        % ylim([Freq(1),Freq(end)]);
-        view(0,90);
-        set(gca,'YDir','normal');
-        title('Frequency Spectrum for a particular time instance','FontSize',30);
-        xlabel('Freq. / Hz','FontSize',30);
-        ylabel('Amplitude','FontSize',30);
-        legend('Window Start','Window End')
-    end
-   
-end
+%                 freq_amp = sum(abs(Spec(fin_sym,1:(avg_pnts+1))),2)/(avg_pnts+1);
+%                 freq_amp_end = sum(abs(Spec(fin_sym,end-avg_pnts:end)),2)/(avg_pnts+1);
+% 
+                freq_amp = min(abs(Spec(fin_sym,1:(avg_pnts+1))),[],2);
+                freq_amp_end = min(abs(Spec(fin_sym,end-avg_pnts:end)),[],2);
 
-symbols = [data_ind; en_arr];
+%                 freq_amp = abs(Spec(fin_sym,1));
+%                 freq_amp_end = abs(Spec(fin_sym,end));
+
+                dif = abs(freq_amp - freq_amp_end);
+                [~,b] = min(dif);
+                symbols(k) = fin_sym(b);
+                %%
+
+            end
+        end
+
+        end
+
 
 end

@@ -1,4 +1,3 @@
-# SYNTAX, FUNCTIONS, MULT, CONCAT, INDICES
 import numpy as np
 
 def get_bounded_max(arr,up_thresh,low_thresh):

@@ -79,7 +79,7 @@ for k = [0.5]
         demod_sym_stack = [];
         Peaks = [];
         %%
-        for m = 8:25%size(idx, 1)
+        for m = 9:11%size(idx, 1)
             disp(['PROG m ', num2str(m), '/', num2str(size(idx, 1))]);
             %%      DC correlations
             tic
@@ -93,7 +93,7 @@ for k = [0.5]
             temp = [];
             indices = [zeros(1, floor(num_DC)); ind];
             size(indices, 1)
-            for i = 2:size(indices, 1)
+            for i = 1:size(indices, 1)
                 %     if(abs(indices(i) - indices(i-1)) > 3 )
                 %         temp = [temp; indices(i,:)];
                 %     end
@@ -187,7 +187,7 @@ for k = [0.5]
                 for j = 1:size(Pream_ind, 1)
                     j
                     %     [demod_sym(j,:) sym_peak(j,:)] = Demod(Pream_ind(j,:),Data_out(j,:),BW,SF,Fs,N,num_preamble,num_sync,num_DC,num_data_sym,DC(1:N),Pream_ind,Peak_amp(j,:),sym,7*mean(Peak_amp(:,3)));
-                    [demod_sym(j, :), ~] = Demod(Pream_ind(j, :), Data_out(j, :), BW, SF, Fs, N, num_preamble, num_sync, num_DC, num_data_sym, DC(1:N), Pream_ind, Peak_amp(j, :), sym, 7 * mean(Peak_amp(:, 3)));
+                    [demod_sym(j, :), ~] = Demod(Pream_ind(j, :), Data_out(j, :), BW, SF, Fs, N, num_preamble, num_sync, num_DC, num_data_sym, DC(1:N), Pream_ind, Peak_amp(j, :), sym, 7 * mean(Peak_amp(:, 3)), m);
                     demod_sym(j, :) = mod(demod_sym(j, :) + bin_offsets(j) - 2, N);
                 end
                 demod_sym_stack = [demod_sym_stack; demod_sym];

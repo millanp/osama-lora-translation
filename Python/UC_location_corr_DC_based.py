@@ -1,15 +1,9 @@
-# SYNTAX, FUNCTIONS, MULT, CONCAT, INDICES, WORKING!!!
 import numpy as np
 from util import length
 from get_4_max import get_4_max
 import math
 
 def UC_location_corr_DC_based(Data,N,num_preamble,num_sync,num_DC,num_data_sym,DC,BW,SF,Fs,DC_ind,pnts_threshold,corr_threshold):
-    #UC_LOCATION Summary of this function goes here
-    #   Detailed explanation goes here
-
-    # if(DC_ind.shape[0] == 0):
-    #     return # TODO what does this mean???
     pot_pream_ind = []
     for i in range(1):
         if(DC_ind - ((num_preamble+num_sync)*N) < 1):
@@ -27,16 +21,11 @@ def UC_location_corr_DC_based(Data,N,num_preamble,num_sync,num_DC,num_data_sym,D
         Data_buffer = Data[int(pot_pream_ind[j,0] - N) : int(pot_pream_ind[j,-1] + N)]
         temp = [0+0j]
         for i in range(length(Data_buffer) - length(DC)):
-            # TODO: why is this i+1???
             temp.append(sum(np.multiply(Data_buffer[i + 1 : i + N + 1], DC[:N])) \
                 / math.sqrt(sum(Data_buffer[i + 1: i + N + 1] * Data_buffer[i + 1 : i + N + 1].conj() ) * \
                 sum( DC[:N] * DC[:N].conj())))
         temp_wind.append(temp)
     temp_wind = np.array(temp_wind)
-    # keyboard
-    # figure
-    # plot(abs(temp_wind(1,:)));
-    # plot(abs(temp_wind(2,:)));
 
     array_stack = []
     for m in range(temp_wind.shape[0]):
@@ -53,11 +42,10 @@ def UC_location_corr_DC_based(Data,N,num_preamble,num_sync,num_DC,num_data_sym,D
                 for j in range(length(peak_ind_curr)):
                     for k in range(length(peak_ind_prev)):
                         if(abs(peak_ind_curr[j]) == abs(peak_ind_prev[k])):
-        #                     n_samp_array = [n_samp_array  peak_ind_prev(k)+((i-1)*N) peak_ind_curr(j)+(i*N)];
-                            n_samp_array.append(peak_ind_prev[k]+((i-1)*N)+(pot_pream_ind[m,0]-N-1) + 3) # TODO why add three? something to do with indices
+                            n_samp_array.append(peak_ind_prev[k]+((i-1)*N)+(pot_pream_ind[m,0]-N-1) + 3) # add 3 for MATLAB -> Python index conversion
             peak_ind_prev = peak_ind_curr
         array_stack.append(n_samp_array)
-    array_stack = np.array(array_stack) # NOTE OKAY
+    array_stack = np.array(array_stack)
 
     for m in range(len(array_stack)):
         n_samp_array = np.array(array_stack[m])
@@ -76,7 +64,6 @@ def UC_location_corr_DC_based(Data,N,num_preamble,num_sync,num_DC,num_data_sym,D
     Upchirp_ind = np.array(Upchirp_ind)
     temp = []
     indices = np.concatenate([np.zeros((1,num_preamble)), Upchirp_ind])
-    # NOTE indices good
     for i in range(1, indices.shape[0]):
         if(len(temp) == 0):
             temp.append(indices[i,:])
