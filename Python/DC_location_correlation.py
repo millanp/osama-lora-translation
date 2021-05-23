@@ -2,6 +2,7 @@ import numpy as np
 import math
 from util import length
 from get_4_max import get_4_max
+import time
 
 def DC_location_correlation(Rx_Buffer,N,DC,pnts_threshold,corr_threshold):
 #   Detecting downchirp
@@ -9,10 +10,17 @@ def DC_location_correlation(Rx_Buffer,N,DC,pnts_threshold,corr_threshold):
     Downchirp_ind = []
     Cross_Corr = []
 
+    st = time.perf_counter()
+    ###################################################
+    # BEGIN SLOW SECTION
+    print('num: ', length(Rx_Buffer) - length(DC) - 1)
+    # OLD:
     for i in range(length(Rx_Buffer) - length(DC) - 1):
-        Cross_Corr.append(sum(Rx_Buffer[ i : i + (N) ] * DC.conj()) \
-                / math.sqrt(sum( Rx_Buffer[ i : i + (N) ] * Rx_Buffer[ i : i + (N) ].conj() ) *
-                sum( DC * DC.conj())))
+        Cross_Corr.append(np.sum(Rx_Buffer[ i : i + N ] * DC.conj()) \
+                / math.sqrt(np.sum( Rx_Buffer[ i : i + N ] * Rx_Buffer[ i : i + (N) ].conj() ) *
+                np.sum( DC * DC.conj())))
+    # END SLOW SECTION
+    ###################################################
     n_samp_array = []
     peak_ind_prev = np.array([])
     Cross_Corr = np.array(Cross_Corr)

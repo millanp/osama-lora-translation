@@ -37,15 +37,15 @@ def filter_false_postives(Data_stack,Upchirp_ind,num_preamble,num_sync,num_DC,N,
         
         sync_word1 = abs(np.fft.fft(sync_wind[:N] * DC[:N]))
         sync_word2 = abs(np.fft.fft(sync_wind[N:] * DC[:N]))
-        if(sync_threshold_low < (2*sum(sync_word1)/N)):
-            sync_threshold_low = (2*sum(sync_word1)/N)
-        elif( sync_threshold_low < (2*sum(sync_word2)/N)):
-            sync_threshold_low = (2*sum(sync_word2)/N)
+        if(sync_threshold_low < (2*np.sum(sync_word1)/N)):
+            sync_threshold_low = (2*np.sum(sync_word1)/N)
+        elif( sync_threshold_low < (2*np.sum(sync_word2)/N)):
+            sync_threshold_low = (2*np.sum(sync_word2)/N)
         syn1_pnts = get_bounded_max(sync_word1,sync_threshold_up,sync_threshold_low)
         syn2_pnts = get_bounded_max(sync_word2,sync_threshold_up,sync_threshold_low)
 
 
-        if(sum(syn1_pnts == sync1_ind) and sum(syn2_pnts == sync2_ind)):
+        if(np.sum(syn1_pnts == sync1_ind) and np.sum(syn2_pnts == sync2_ind)):
             Preamble_ind = np.concatenate([Preamble_ind, Upchirp_ind[m,:]])
             if(pream_peak_ind[m] < N/2):
                 bin_offsets.append(1 + (-np.mod(pream_peak_ind[m]+1,N))) # add one since p_p_i consists of indices

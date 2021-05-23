@@ -58,21 +58,21 @@ def Demod(Pream_ind,Rx_Buffer,BW,SF,Fs,N,num_preamble,num_sync,num_DC,num_data_s
         for i in range(length(sym_bnd)):
             buff = np.zeros((2,nfft*N))
             buff[0,1:sym_bnd(i) - 1] = temp_wind[:sym_bnd[i] - 1]
-            buff[0,:] = abs(np.fft.fft(buff[0,:],nfft*N)) / math.sqrt(sum(abs(buff[0,:]) ** 2)) # div OKAY
+            buff[0,:] = abs(np.fft.fft(buff[0,:],nfft*N)) / math.sqrt(np.sum(np.abs(buff[0,:]) ** 2)) # div OKAY
             buff[1,sym_bnd[i]:N] = temp_wind[sym_bnd[i]:N]
-            buff[1,:] = abs(np.fft.fft(buff[1,:],nfft*N)) / math.sqrt(sum(abs(buff[1,:]) ** 2))
+            buff[1,:] = abs(np.fft.fft(buff[1,:],nfft*N)) / math.sqrt(np.sum(np.abs(buff[1,:]) ** 2))
             intf_wind.append(buff)
         intf_wind = np.array(intf_wind)
         intf_wind_min_fft = min(intf_wind,[],1)
-        pot_sym_cic = get_4_max(intf_wind_min_fft,4*sum(intf_wind_min_fft)/(nfft*N),nfft*N)
+        pot_sym_cic = get_4_max(intf_wind_min_fft,4*np.sum(intf_wind_min_fft)/(nfft*N),nfft*N)
         pot_sym_cic = np.ceil(pot_sym_cic/nfft)
         ## Power-Filtering
         PwrFctr = 0.5
         PwrFlr = 4
         up_thresh = (Peak_amp[0] + PwrFctr*Peak_amp[0])
         low_thresh = (Peak_amp[0] - PwrFctr*Peak_amp[0])
-        if(low_thresh < (PwrFlr*sum(data_fft)/N)): #1
-            low_thresh = (PwrFlr*sum(data_fft)/N)
+        if(low_thresh < (PwrFlr*np.sum(data_fft)/N)): #1
+            low_thresh = (PwrFlr*np.sum(data_fft)/N)
         pot_sym_pf = get_bounded_max(data_fft,up_thresh,low_thresh)
         ## Filtering Preamble of interfering Packets
         data_wind_next_1 = Rx_Buffer[frame_indices[k,0] + N : frame_indices[k,1] + N+1] * DC
@@ -90,9 +90,9 @@ def Demod(Pream_ind,Rx_Buffer,BW,SF,Fs,N,num_preamble,num_sync,num_DC,num_data_s
 
         temp = []
         for i in range(length(pot_sym_pf)):
-            if( (sum(pot_sym_pf[i] == prev_wind_sym_1) and sum(pot_sym_pf[i] == next_wind_sym_1))\
-                    or (sum(pot_sym_pf[i] == prev_wind_sym_2) and sum(pot_sym_pf[i] == prev_wind_sym_1))\
-                    or (sum(pot_sym_pf[i] == next_wind_sym_1) and sum(pot_sym_pf[i] == next_wind_sym_2)) ):
+            if( (np.sum(pot_sym_pf[i] == prev_wind_sym_1) and np.sum(pot_sym_pf[i] == next_wind_sym_1))\
+                    or (np.sum(pot_sym_pf[i] == prev_wind_sym_2) and np.sum(pot_sym_pf[i] == prev_wind_sym_1))\
+                    or (np.sum(pot_sym_pf[i] == next_wind_sym_1) and np.sum(pot_sym_pf[i] == next_wind_sym_2)) ):
                 pass                
             else:
                 temp.append(pot_sym_pf[i])
@@ -122,7 +122,6 @@ def Demod(Pream_ind,Rx_Buffer,BW,SF,Fs,N,num_preamble,num_sync,num_DC,num_data_s
         if(length(sym_bnd) == 0):
             if(len(pot_sym) == 0):
                 symbols.append(np.argmax(data_fft) + 1)
-                print('1 1: ', np.argmax(data_fft) + 1)
             else:
                 dist = abs(data_fft[pot_sym - 1] - (up_thresh + low_thresh)/2) # subtract 1 from pot_sym to convert to indices
 

@@ -21,9 +21,9 @@ def UC_location_corr_DC_based(Data,N,num_preamble,num_sync,num_DC,num_data_sym,D
         Data_buffer = Data[int(pot_pream_ind[j,0] - N) : int(pot_pream_ind[j,-1] + N)]
         temp = [0+0j]
         for i in range(length(Data_buffer) - length(DC)):
-            temp.append(sum(np.multiply(Data_buffer[i + 1 : i + N + 1], DC[:N])) \
-                / math.sqrt(sum(Data_buffer[i + 1: i + N + 1] * Data_buffer[i + 1 : i + N + 1].conj() ) * \
-                sum( DC[:N] * DC[:N].conj())))
+            temp.append(np.sum(np.multiply(Data_buffer[i + 1 : i + N + 1], DC[:N])) \
+                / math.sqrt(np.sum(Data_buffer[i + 1: i + N + 1] * Data_buffer[i + 1 : i + N + 1].conj() ) * \
+                np.sum( DC[:N] * DC[:N].conj())))
         temp_wind.append(temp)
     temp_wind = np.array(temp_wind)
 
@@ -54,21 +54,25 @@ def UC_location_corr_DC_based(Data,N,num_preamble,num_sync,num_DC,num_data_sym,D
             c = 0
             ind_arr = np.arange(n_samp_array[i] + N, n_samp_array[i] + N + (num_preamble-2)*N + 1, N)
             for j in range(len(ind_arr)):
-                c = c + sum( n_samp_array == ind_arr[j] )
+                c = c + np.sum( n_samp_array == ind_arr[j] )
             if( c >= 6 ):
                 if(len(Upchirp_ind) != 0):
-                    if(sum(np.array(Upchirp_ind)[:,0] == n_samp_array[i]) != 1):
+                    if(np.sum(np.array(Upchirp_ind)[:,0] == n_samp_array[i]) != 1):
                         Upchirp_ind.append(np.concatenate([[n_samp_array[i]],ind_arr]))
                 else:
                     Upchirp_ind.append(np.concatenate([[n_samp_array[i]], ind_arr]))
-    Upchirp_ind = np.array(Upchirp_ind)
+    if len(Upchirp_ind) != 0:
+        Upchirp_ind = np.array(Upchirp_ind)
+        indices = np.concatenate([np.zeros((1,num_preamble)), Upchirp_ind])
+    else:
+        indices = np.zeros((1,num_preamble))
     temp = []
-    indices = np.concatenate([np.zeros((1,num_preamble)), Upchirp_ind])
+    
     for i in range(1, indices.shape[0]):
         if(len(temp) == 0):
             temp.append(indices[i,:])
         else:
-            if( min(abs(indices.flatten(1)[i] - np.array(temp)[:,0])) > 5 ):
+            if( min(abs(indices[i][0] - np.array(temp)[:,0])) > 5 ):
                 temp.append(indices[i,:])
     temp = np.array(temp)
     Upchirp_ind = temp

@@ -32,7 +32,7 @@ def dnsamp_buff(Data_stack,Upchirp_ind,num_preamble,num_sync,num_DC,N,DC):
                     freq_off.append(( (N*n_pnt) - c[j] ) / n_pnt)
                 else:
                     freq_off.append(-1*( c[j] - 1 ) / n_pnt)
-            freq_off = sum( freq_off[1:7] ) / (num_preamble - 2)
+            freq_off = np.sum( freq_off[1:7] ) / (num_preamble - 2)
             Data_freq_off.append(Data_stack[m,:] * np.exp( (1j*2*math.pi*(freq_off / N)) * np.arange(1, length(Data_stack[m,:]) + 1) ))
             ind_temp = np.concatenate([range(5), range(N-4, N)])
             a = []
@@ -61,7 +61,7 @@ def dnsamp_buff(Data_stack,Upchirp_ind,num_preamble,num_sync,num_DC,N,DC):
             ind = temp.argmax(0)
             pream_peak_ind = row_ind[ind]
             adj_ind = np.array([np.mod(pream_peak_ind-1,N), np.mod(pream_peak_ind+1,N)])
-            if(sum(adj_ind == 0) == 1):
+            if(np.sum(adj_ind == 0) == 1):
                 adj_ind[(adj_ind == 0).nonzero()] = N
             freq_track_qual = ( np.sum(np.abs(Spec[pream_peak_ind,:])) - np.sum(np.abs(Spec[adj_ind[0],:])) ) + ( np.sum(np.abs(Spec[pream_peak_ind,:])) - np.sum(np.abs(Spec[adj_ind[1],:])) )
             inn.append(freq_track_qual)

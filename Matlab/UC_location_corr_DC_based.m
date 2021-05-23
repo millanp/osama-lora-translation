@@ -120,6 +120,9 @@ for i = 2:size(indices,1)
     if(length(temp) == 0)
         temp = [temp; indices(i,:)];
     else
+        x = indices(i)
+        y = temp(:,1)
+        thing = min(abs(indices(i) - temp(:,1)))
         if( min(abs(indices(i) - temp(:,1))) > 5 )
             temp = [temp; indices(i,:)];
         end
