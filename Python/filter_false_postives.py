@@ -1,26 +1,43 @@
 import numpy as np
 import math
-from Chirplet_Transform import Chirplet_Transform
 from get_bounded_max import get_bounded_max
+from sym_to_data_ang import sym_to_data_ang
+from param_configs import param_configs
+from stft_v2 import stft_v2
 
-def filter_false_postives(Data_stack,Upchirp_ind,num_preamble,num_sync,num_DC,N,DC,Fs,Peak):
-    fLevel = N
-    WinLen = N
-    alpha = 0
+def filter_false_postives(Data_stack,Upchirp_ind,Peak,FFO):
+    # load parameters
+    SF = param_configs(1)
+    BW = param_configs(2)
+    Fs = param_configs(3)
+    N = int(2**SF)
+    num_preamble = param_configs(4)
+    num_sync = param_configs(5)
+    num_DC = param_configs(6)
+    S1 = param_configs(12)
+    S2 = param_configs(13)
 
+    DC = np.conj(sym_to_data_ang(np.ones(num_preamble),N))
+
+    ffo = []
     Preamble_ind = []
     bin_offsets = []
     Data_out = []
     Peak_amp = []
     pream_peak_ind = []
+    # row_ind contains the Frequency Bins around bin 1 where a
+    # Preamble Peak can lie, assumption (-6*BW/2^SF <= Freq_off <= 6*BW/2^SF)
+    row_ind = np.concatenate([range(N-5, N+1), range(7)])
     for m in range(Upchirp_ind.shape[0]):
+        # extract 8 Preamble long window
         data_wind = Data_stack[m,int(Upchirp_ind[m,0]) - 1 : int(Upchirp_ind[m,0] + ((num_preamble )*N)) - 1]
-        [out,_,_] = Chirplet_Transform(data_wind * DC,fLevel,WinLen,Fs,alpha,5)
+        # Compute STFT to accurately find the Preamble Frequency Bin and any
+        # bin offset (if any left)
+        Spec = stft_v2(data_wind * DC,N)
         temp = []
-        row_ind = np.concatenate([range(N-5, N+1), range(7)])
         count = 0
         for i in np.nditer(row_ind):
-            temp.append(np.sum(np.abs(out[i,:])))
+            temp.append(np.sum(np.abs(Spec[i,:])))
             count = count + 1
         ind = np.argmax(temp)
         pream_peak_ind.append(row_ind[ind])
@@ -46,13 +63,17 @@ def filter_false_postives(Data_stack,Upchirp_ind,num_preamble,num_sync,num_DC,N,
 
 
         if(np.sum(syn1_pnts == sync1_ind) and np.sum(syn2_pnts == sync2_ind)):
-            Preamble_ind = np.concatenate([Preamble_ind, Upchirp_ind[m,:]])
+            Preamble_ind +=  [Upchirp_ind[m,:]]
             if(pream_peak_ind[m] < N/2):
                 bin_offsets.append(1 + (-np.mod(pream_peak_ind[m]+1,N))) # add one since p_p_i consists of indices
             else:
                 print('second branch')
                 bin_offsets.append(np.mod(N+2 - pream_peak_ind[m],N))
-            Data_out = np.concatenate([Data_out, Data_stack[m,:]])
-            Peak_amp = np.concatenate([Peak_amp, Peak[m,:]])
-    return [Preamble_ind, bin_offsets, Data_out, Peak_amp]
+            Data_out += [Data_stack[m,:]]
+            Peak_amp += [Peak[m,:]]
+            ffo.append(FFO[m])
+    Preamble_ind = np.array(Preamble_ind)
+    Data_out = np.array(Data_out)
+    Peak_amp = np.array(Peak_amp)
+    return [Preamble_ind, bin_offsets, Data_out, Peak_amp, ffo]
 

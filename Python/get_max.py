@@ -1,6 +1,6 @@
 import numpy as np
 
-def get_4_max(arr,threshold,num_pnts):
+def get_max(arr,threshold,num_pnts):
     out = []
     if len(arr) == 0:
         return np.array(out)

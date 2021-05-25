@@ -1,7 +1,9 @@
 import numpy as np
 import math
 
-def stft(Rx_Buffer,N,DC,upsamp,dis):
+def stft_v1(Rx_Buffer,N,DC,upsamp,dis):
+    # This function produces a spectrogram of LoRa signal using Dechirping
+    # operation to get the best frequency Resolution
     Spec = np.zeros((N,Rx_Buffer.shape[0]))
     buff = np.concatenate([Rx_Buffer, np.zeros(N-1)])
     if(upsamp):
